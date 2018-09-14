@@ -1,0 +1,27 @@
+{
+  "name": "react-article-bs",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "antd": "^3.8.4",
+    "axios": "^0.18.0",
+    "babel-plugin-import": "^1.8.0",
+    "classnames": "^2.2.6",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-babel": "^5.2.0",
+    "less": "^3.8.1",
+    "less-loader": "^4.1.0",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
+    "react-scripts": "1.1.5",
+    "wangeditor": "^3.1.1"
+  },
+  "scripts": {
+    "start": "PORT=3002 react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
