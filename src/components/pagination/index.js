@@ -38,6 +38,10 @@ class Pagination extends React.Component {
       disableNext: props.disableNext,
     });
   }
+  shouldComponentUpdate(nextProps, nextState){
+    const { current, disableNext } = this.state;
+    return (nextState.current !== current || nextState.disableNext !== disableNext);
+  }
   render() {
     const { disableNext, current } = this.state;
     const prevClass = classnames({

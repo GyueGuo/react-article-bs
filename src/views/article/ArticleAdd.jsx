@@ -39,12 +39,19 @@ class ArticleAdd extends React.Component {
     this.state = {
       columns: [],
       reprint: false,
-    }
+      article: {
+        title: '',
+        id: '',
+        column: '',
+        reprint: false,
+        source: '',
+        content: ''
+      },
+    };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleReprintChange = this.handleReprintChange.bind(this);
     this.validateEditorFrom = this.validateEditorFrom.bind(this);
-    // this.validateSoureFrom = this.validateSoureFrom.bind(this);
     
   }
   componentDidMount() {
@@ -59,6 +66,21 @@ class ArticleAdd extends React.Component {
       });
     };
     this.editor.create();
+    if (this.props.location.state && this.props.location.state.id) {
+      const id = this.props.location.state.id;
+      axios
+        .get(`http://localhost:9090/bs/article/article.json?id=${id}`)
+        .then((res) => {
+          this.editor.txt.html(res.data.content);
+          this.setState({
+            article: res.data,
+            reprint: res.data.reprint,
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
     axios
       .get('http://localhost:9090/bs/article/column.json')
       .then((res) => {
@@ -83,14 +105,31 @@ class ArticleAdd extends React.Component {
             },
           });
         } else {
-          
+          axios({
+              url: 'http://localhost:9090/bs/article/article.json',
+              method: this.state.article.id ? 'put' : 'post',
+              data: values
+            })
+            .then((res) => {
+              console.log(res);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
         }
+      } else {
+        console.log(err);
       }
     });
   }
   // 重置
   handleReset() {
+    const { article } = this.state;
+    this.editor.txt.html(article.content);
     this.props.form.resetFields();
+    this.setState({
+      reprint: article.reprint,
+    })
   }
   handleReprintChange(e) {
     this.setState({
@@ -106,7 +145,8 @@ class ArticleAdd extends React.Component {
   }
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { reprint, columns } = this.state;
+    const { reprint, columns, article } = this.state;
+    console.log(article);
     return (
       <div className="artcile-add">
         <Form onSubmit={this.handleSubmit}>
@@ -114,6 +154,7 @@ class ArticleAdd extends React.Component {
             { 
               getFieldDecorator('title', {
                 rules:[{ required: true, message: '文章标题'}],
+                initialValue: article.title,
               })(
                 <Input placehholder="文章标题，50字以内" autoComplete="off" />
               )
@@ -126,7 +167,7 @@ class ArticleAdd extends React.Component {
                   required: true,
                   message: '栏目不能为空',
                 }],
-                initialValue: columns.length ? columns[0].id : ''
+                initialValue: article.column || columns[0] ? columns[0].id : ''
               })(
                 <Select>
                   {
@@ -143,9 +184,14 @@ class ArticleAdd extends React.Component {
           <Form.Item label="转载" { ...formItemLayout }>
             {
               getFieldDecorator('reprint', {
-                initialValue: reprint
+                initialValue: article.reprint
               })(
-              <Checkbox onChange={this.handleReprintChange}>是否转载</Checkbox>,
+              <Checkbox
+                onChange={this.handleReprintChange}
+                checked={reprint}
+              >
+                是否转载
+              </Checkbox>,
               )
             }
           </Form.Item>
@@ -156,7 +202,7 @@ class ArticleAdd extends React.Component {
                   required: reprint,
                   message: '内容来源不能为空',
                 }],
-                initialValue: ''
+                initialValue: article.source
               })(
                 <Input
                   placehholder="内容来源"
@@ -171,7 +217,7 @@ class ArticleAdd extends React.Component {
                 rules: [{
                   validator: this.validateEditorFrom, // 使用自定义的校验规则
                 }],
-                initialValue: '',
+                initialValue: article.content,
               })(<div ref={(node) => this.editorNode = node} />)
             }
           </Form.Item>

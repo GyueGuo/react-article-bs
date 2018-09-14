@@ -4,38 +4,6 @@ import axios from 'axios';
 import Pagination from '../../components/pagination/';
 import './ArticleManage.less';
 
-const columnConf = [{
-  title: '标题',
-  dataIndex: 'title',
-  key: 'title',
-  align: "center"
-}, {
-  title: '栏目',
-  dataIndex: 'column',
-  key: 'column',
-  align: "center"
-}, {
-  title: '来源',
-  dataIndex: 'source',
-  key: 'source',
-  align: "center"
-} ,{
-  title: '发布时间',
-  dataIndex: 'created',
-  key: 'created',
-  align: "center"
-}, {
-  title: '状态',
-  dataIndex: 'status',
-  key: 'status',
-  align: "center"
-}, {
-  title: '操作',
-  key: 'operation',
-  align: "center",
-  render: () => ( <a href="javascript;">编辑</a>)
-}];
-
 const colLayout = {
   span:5,
   offset: 1
@@ -69,6 +37,37 @@ class Manage extends React.Component {
       loading: false,
     }
     this.current = 0;
+    this.columnConf = [{
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
+      align: "center"
+    }, {
+      title: '栏目',
+      dataIndex: 'column',
+      key: 'column',
+      align: "center"
+    }, {
+      title: '来源',
+      dataIndex: 'source',
+      key: 'source',
+      align: "center"
+    } ,{
+      title: '发布时间',
+      dataIndex: 'created',
+      key: 'created',
+      align: "center"
+    }, {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      align: "center"
+    }, {
+      title: '操作',
+      key: 'operation',
+      align: "center",
+      render: (item) => ( <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>)
+    }];
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
     this.fetchList = this.fetchList.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -81,6 +80,14 @@ class Manage extends React.Component {
 
     });
   }
+  handleEdit(id) {
+    this.props.history.push({
+      pathname: '/article/article-add',
+      state: {
+        id,
+      },
+    });
+  }
   // 获取商品列表
   fetchList() {
     this.setState({
@@ -89,7 +96,8 @@ class Manage extends React.Component {
     axios
       .get('http://localhost:9090/bs/article/list.json')
       .then((res) => {
-        const { articles, hasNext } = res.data;
+        const { articles, hasNext, current } = res.data;
+        this.current = current;
         this.setState({
           articles,
           hasNext,
@@ -194,7 +202,7 @@ class Manage extends React.Component {
         <Table
           pagination={false}
           rowSelection={rowSelection}
-          columns={columnConf}
+          columns={this.columnConf}
           dataSource={articles}
           rowKey={item => item.id}
           loading={loading}

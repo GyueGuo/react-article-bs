@@ -86,10 +86,12 @@ class ArticleAdd extends React.Component {
       tableLoading: true,
     });
     axios
-      .get('http://localhost:9090/bs/article/column.json')
+      .get(`http://localhost:9090/bs/article/column.json?current=${this.current}`)
       .then((res) => {
+        const { current, columns } = res.data;
+        this.current = current;
         this.setState({
-          columns: res.data.columns,
+          columns,
           tableLoading: false,
         });
       })
@@ -116,7 +118,6 @@ class ArticleAdd extends React.Component {
           ...values,
         };
         this.selectedColumn.id && (data.id = this.selectedColumn.id);
-        console.log(data, this.selectedColumn);
         axios({
           url: 'http://localhost:9090/bs/article/column.json',
           method: Object.keys(this.selectedColumn).length ? 'put' : 'post',
