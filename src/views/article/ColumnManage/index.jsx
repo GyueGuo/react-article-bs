@@ -1,23 +1,20 @@
 import React from 'react';
-import Pagination from '../../components/pagination/';
+import Pagination from '../../../components/pagination/';
 import axios from 'axios';
-import './ColumnManage.less';
-import { Form, Table, Row, Button, Modal, Input } from 'antd';
+import './index.less';
+import { Form, Table, Row, Button, Modal, Input, message } from 'antd';
 
 // form 布局配置
 const formItemLayout = {
   labelCol: {
     xs: { span: 24 },
-    sm: { span: 2 },
+    sm: { span: 4 },
   },
   wrapperCol: {
     xs: { span: 24 },
-    sm: { span: 21, offset: 1 },
+    sm: { span: 19, offset: 1 },
   },
 };
-function hasErrors(fieldsError) {
-  return Object.keys(fieldsError).some(field => fieldsError[field]);
-}
 
 class ArticleAdd extends React.Component {
   constructor(props) {
@@ -30,12 +27,13 @@ class ArticleAdd extends React.Component {
     this.selectedColumn = {};
     this.handleCancel = this.handleCancel.bind(this);
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
-    this.fetchColumn = this.fetchColumn.bind(this);
+    this.fetchList = this.fetchList.bind(this);
     this.handleShowModal = this.handleShowModal.bind(this);
     this.handleEditColumn = this.handleEditColumn.bind(this);
     this.handleFormSubmit = this.handleFormSubmit.bind(this);
-    
+    this.hasNext = false;
     this.current = 0;
+    this.pageSize = 30;
     // table 配置
     this.columnConf = [{
       title: 'ID',
@@ -48,9 +46,9 @@ class ArticleAdd extends React.Component {
       key: 'title',
       align: "center"
     }, {
-      title: '栏目code',
-      dataIndex: 'code',
-      key: 'code',
+      title: '创建时间',
+      dataIndex: 'created',
+      key: 'created',
       align: "center"
     }, {
       title: '操作',
@@ -62,13 +60,12 @@ class ArticleAdd extends React.Component {
   // 分页组件页数变更回调
   handlePaginationChange(current) {
     this.current = current;
-
+    this.fetchList();
   }
 
   // 编辑显示新增栏目弹窗
   handleEditColumn(item) {
     this.selectedColumn = {
-      code: item.code,
       title: item.title,
       id: item.id,
     };
@@ -81,25 +78,27 @@ class ArticleAdd extends React.Component {
     });
   }
   // 获取列表
-  fetchColumn() {
+  fetchList() {
     this.setState({
       tableLoading: true,
     });
     axios
-      .get(`http://localhost:9090/bs/article/column.json?current=${this.current}`)
-      .then((res) => {
-        const { current, columns } = res.data;
-        this.current = current;
-        this.setState({
-          columns,
-          tableLoading: false,
-        });
+      .get(`http://localhost:9090/bs/article/column.json?current=${this.current}&pageSize=${this.pageSize}`)
+      .then(({ data }) => {
+        if (data.flag === 1) {
+          const columns = data.data;
+          this.hasNext = columns.length >= this.pageSize;
+          this.setState({
+            columns,
+            tableLoading: false,
+          });
+        } else {
+          message.error(data.msg);
+          this.setState({
+            tableLoading: false,
+          });
+        }
       })
-      .catch((err) => {
-        this.setState({
-          tableLoading: false,
-        });
-      });
   }
 
   // 弹窗取消
@@ -122,21 +121,26 @@ class ArticleAdd extends React.Component {
           url: 'http://localhost:9090/bs/article/column.json',
           method: Object.keys(this.selectedColumn).length ? 'put' : 'post',
           data,
-        }).then((data) => {
-          this.handleCancel();
-          this.fetchColumn();
+        }).then(({data}) => {
+          if (data.flag === 1) {
+            message.success('保存成功');
+            this.handleCancel();
+            this.fetchList();
+          } else {
+            message.error(data.msg);
+          }
         })
       }
     });
   }
 
   componentDidMount() {
-    this.fetchColumn();
+    this.fetchList();
   }
 
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { hasNext, columns, tableLoading, showModal } = this.state;
+    const { columns, tableLoading, showModal } = this.state;
     return (
       <div className="column-manage">
         <Row className="add-column">
@@ -156,7 +160,7 @@ class ArticleAdd extends React.Component {
         />
         <Pagination
           current={this.current}
-          disableNext={!hasNext}
+          disableNext={!this.hasNext}
           onChange={this.handlePaginationChange}
         />
         <Modal
@@ -177,16 +181,6 @@ class ArticleAdd extends React.Component {
                   initialValue: this.selectedColumn.title || '',
                 })(
                   <Input placeholder="标题" type="text" autoComplete="off" />
-                )
-              }
-            </Form.Item>
-            <Form.Item {...formItemLayout} label="code">
-              {
-                getFieldDecorator('code', {
-                  rules: [{required: true, message: 'code不能为空'}],
-                  initialValue: this.selectedColumn.code || '',
-                })(
-                  <Input placeholder="code" type="text" autoComplete="off" />
                 )
               }
             </Form.Item>

@@ -1,9 +1,9 @@
 import React from 'react';
 import Editor from 'wangeditor';
 import axios from 'axios';
-import './ArticleAdd.less';
+import './index.less';
 
-import { Form, Input, Select, Row, Button, Checkbox } from 'antd';
+import { Form, Input, Select, Row, Button, Checkbox, message } from 'antd';
 // form 布局配置
 const formItemLayout = {
   labelCol: {
@@ -67,14 +67,15 @@ class ArticleAdd extends React.Component {
     };
     this.editor.create();
     if (this.props.location.state && this.props.location.state.id) {
-      const id = this.props.location.state.id;
+      this.id = this.props.location.state.id;
       axios
-        .get(`http://localhost:9090/bs/article/article.json?id=${id}`)
+        .get(`http://localhost:9090/bs/article/article.json?id=${this.id}`)
         .then((res) => {
-          this.editor.txt.html(res.data.content);
+          const article = res.data.data.article;
+          this.editor.txt.html(article.content);
           this.setState({
-            article: res.data,
-            reprint: res.data.reprint,
+            article,
+            reprint: !!article.reprint,
           });
         })
         .catch((err) => {
@@ -82,10 +83,10 @@ class ArticleAdd extends React.Component {
         });
     }
     axios
-      .get('http://localhost:9090/bs/article/column.json')
-      .then((res) => {
+      .get('http://localhost:9090/bs/article/column.json?pageSize=all')
+      .then(({data}) => {
         this.setState({
-          columns: res.data.columns,
+          columns: data.data.columns,
         });
       })
       .catch((err) => {
@@ -105,20 +106,25 @@ class ArticleAdd extends React.Component {
             },
           });
         } else {
+          const data = { ...values, id: this.id };
+          data.source = data.reprint ? data.source : '';
           axios({
-              url: 'http://localhost:9090/bs/article/article.json',
-              method: this.state.article.id ? 'put' : 'post',
-              data: values
-            })
-            .then((res) => {
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
+            url: 'http://localhost:9090/bs/article/article.json',
+            method: this.id? 'put' : 'post',
+            data,
+          })
+          .then(({data}) => {
+            if (data && data.flag === 1) {
+              if (!this.id) {
+                this.id = data.data.id;
+              }
+              message.success('保存成功');
+            }
+          })
+          .catch(() => {
+            message.success('系统错误，请稍后再试');
+          });
         }
-      } else {
-        console.log(err);
       }
     });
   }
@@ -146,7 +152,6 @@ class ArticleAdd extends React.Component {
   render() {
     const { getFieldDecorator } = this.props.form;
     const { reprint, columns, article } = this.state;
-    console.log(article);
     return (
       <div className="artcile-add">
         <Form onSubmit={this.handleSubmit}>
@@ -167,7 +172,7 @@ class ArticleAdd extends React.Component {
                   required: true,
                   message: '栏目不能为空',
                 }],
-                initialValue: article.column || columns[0] ? columns[0].id : ''
+                initialValue: article.column_id || (columns[0] ? columns[0].id : '')
               })(
                 <Select>
                   {

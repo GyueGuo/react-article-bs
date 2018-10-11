@@ -8,14 +8,11 @@ const MENU = [{
   title: '用户管理',
   key: '/user/',
   children: [{
-    title: '用户列表',
-    link: '/user/user-list',
+    title: '用户封禁',
+    link: '/user/user-closure',
   }, {
-    title: '添加用户',
-    link: '/user/user-add',
-  }, {
-    title: '文章列表',
-    link: '/article/article-manage',
+    title: '用户审核',
+    link: '/user/user-examination',
   }]
 }, {
   title: '文章管理',
@@ -26,9 +23,6 @@ const MENU = [{
   }, {
     title: '添加文章',
     link: '/article/article-add',
-  },{
-    title: '文章审核',
-    link: '/article/article-auditing',
   }, {
     title: '文章列表',
     link: '/article/article-manage',
@@ -62,13 +56,11 @@ class App extends React.Component {
       openKeys,
       defaultSelectedKeys,
     };
-    console.log()
     this.handleMenuChange = this.handleMenuChange.bind(this);
   }
   handleMenuChange(keys) {
     const length = keys.length;
     const openKeys = length ? [keys[keys.length - 1]] : [];
-    console.log(openKeys);
     this.setState({ openKeys });
   }
 

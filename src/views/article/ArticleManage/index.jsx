@@ -1,25 +1,36 @@
 import React from 'react';
-import { Form, Table, Row, Col, Button, Select, Input } from 'antd';
+import { Form, Table, Row, Col, Button, Select, Input, message, Modal } from 'antd';
 import axios from 'axios';
-import Pagination from '../../components/pagination/';
-import './ArticleManage.less';
+import Pagination from '../../../components/pagination/';
+import './index.less';
 
 const colLayout = {
   span:5,
   offset: 1
 };
-
+const formItemLayout = {
+  labelCol: {
+    span: 6,
+  },
+  wrapperCol: {
+    span: 17,
+    offset: 1,
+  },
+};
 const status = [{
   title: '全部',
   value: 'all'
 }, {
   title: '审核中',
-  value: 1
+  value: 0
 }, {
   title: '未通过',
-  value: 2
+  value: 1
 }, {
   title: '已通过',
+  value: 2
+}, {
+  title: '已下架',
   value: 3
 }];
 
@@ -32,10 +43,12 @@ class Manage extends React.Component {
         title: '全部',
         id: 'all'
       }],
-      hasNext: false,
       selectedRowKeys: [],
       loading: false,
     }
+    this.searchQuery = {};
+    this.hasNext = false;
+    this.pageSize = 30;
     this.current = 0;
     this.columnConf = [{
       title: '标题',
@@ -66,20 +79,36 @@ class Manage extends React.Component {
       title: '操作',
       key: 'operation',
       align: "center",
-      render: (item) => ( <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>)
+      render: (item) => (
+        <React.Fragment>
+          <a href="javascript:;" onClick={() => {this.handleDelete(item.id)}}>删除</a>
+          {' '}|{' '}  
+          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
+        </React.Fragment>
+      )
     }];
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
     this.fetchList = this.fetchList.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
     this.handleSelectedRowKeysChange = this.handleSelectedRowKeysChange.bind(this);
   }
   // 搜索表单提交
   handleSubmit(e) {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
-
+      const query = {};
+      Object.keys(values).map((key) => {
+        if (values[key] !== '' && values[key] !== 'all') {
+          query[key] = values[key];
+        }
+      });
+      this.searchQuery = query;
+      this.current = 0;
+      this.fetchList();
     });
   }
+  // 编辑
   handleEdit(id) {
     this.props.history.push({
       pathname: '/article/article-add',
@@ -88,19 +117,44 @@ class Manage extends React.Component {
       },
     });
   }
+  // 删除
+  handleDelete(id) {
+    Modal.confirm({
+      cancelText: '取消',
+      okText: '确定',
+      content: '操作不可恢复',
+      title: '确定删除么？',
+      onOk: () => {
+        axios({
+            url: 'http://localhost:9090/bs/article/article.json',
+            method: 'delete',
+            data: { id }
+          }).then(({data}) => {
+            console.log(data);
+            message.success('删除成功');
+            this.fetchList();
+          }, () => {
+            message.error('系统错误，请稍后再试');
+          });
+      }
+    });
+  }
   // 获取商品列表
   fetchList() {
     this.setState({
       loading: true,
     });
+    let url = `http://localhost:9090/bs/article/list.json?current=${this.current}&pageSize=${this.pageSize}`;
+    Object.keys(this.searchQuery).forEach((key) => {
+      url += `&${key}=${this.searchQuery[key]}`;
+    });
     axios
-      .get('http://localhost:9090/bs/article/list.json')
-      .then((res) => {
-        const { articles, hasNext, current } = res.data;
-        this.current = current;
+      .get(url)
+      .then(({data}) => {
+        const { articles } = data.data;
+        this.hasNext = articles.length >= this.pageSize;
         this.setState({
           articles,
-          hasNext,
           loading: false,
         });
       })
@@ -121,10 +175,10 @@ class Manage extends React.Component {
   componentDidMount() {
     const { columns } = this.state;
     axios
-      .get('http://localhost:9090/bs/article/column.json')
-      .then((res) => {
+      .get('http://localhost:9090/bs/article/column.json?pageSize=all')
+      .then(({data}) => {
         this.setState({
-          columns: [...columns, ...res.data.columns],
+          columns: [...columns, ...data.data.columns],
         });
       })
       .catch((err) => {
@@ -134,7 +188,7 @@ class Manage extends React.Component {
   }
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { selectedRowKeys, articles, columns, hasNext, loading } = this.state;
+    const { selectedRowKeys, articles, columns, loading } = this.state;
     const rowSelection = {
       selectedRowKeys,
       onChange: this.handleSelectedRowKeysChange,
@@ -144,7 +198,7 @@ class Manage extends React.Component {
         <Form className="search-form" layout="inline" onSubmit={this.handleSubmit}>
           <Row>
             <Col {...colLayout}>
-              <Form.Item label="栏目">
+              <Form.Item label="栏目" {...formItemLayout}>
                 {
                   getFieldDecorator('column', {
                   initialValue: columns.length ? columns[0].id : ''
@@ -163,7 +217,7 @@ class Manage extends React.Component {
               </Form.Item>
             </Col>
             <Col {...colLayout}>
-              <Form.Item label="标题">
+              <Form.Item label="标题" {...formItemLayout}>
                 {
                   getFieldDecorator('title', {
                   initialValue: ''
@@ -174,7 +228,7 @@ class Manage extends React.Component {
               </Form.Item>
             </Col>
             <Col {...colLayout}>
-              <Form.Item label="状态">
+              <Form.Item label="状态" {...formItemLayout}>
                 {
                   getFieldDecorator('status', {
                   initialValue: status[0].value
@@ -209,7 +263,7 @@ class Manage extends React.Component {
         />
         <Pagination
           current={this.current}
-          disableNext={!hasNext}
+          disableNext={!this.hasNext}
           onChange={this.handlePaginationChange}
         />
       </div>
