@@ -55,28 +55,31 @@ class ArticleAdd extends React.Component {
     
   }
   componentDidMount() {
+    const { form, location } = this.props;
     // 初始化富文本编辑器
     this.editor = new Editor(this.editorNode);
     this.editor.customConfig.menus = editorConfig;
     this.editor.customConfig.zIndex = 100;
     this.editor.customConfig.onchange = (html) => {
       // 输入时将编辑器的html值设为form表单的content属性值
-      this.props.form.setFieldsValue({
+      form.setFieldsValue({
         content: html.trim(),
       });
     };
     this.editor.create();
-    if (this.props.location.state && this.props.location.state.id) {
-      this.id = this.props.location.state.id;
+    if (location.state && location.state.id) {
+      this.id = location.state.id;
       axios
         .get(`http://localhost:9090/bs/article/article.json?id=${this.id}`)
-        .then((res) => {
-          const article = res.data.data.article;
-          this.editor.txt.html(article.content);
-          this.setState({
-            article,
-            reprint: !!article.reprint,
-          });
+        .then(({ data }) => {
+          if (data.flag === 1) {
+            const article = data.data;
+            this.editor.txt.html(article.content);
+            this.setState({
+              article,
+              reprint: !!article.reprint,
+            });
+          }
         })
         .catch((err) => {
           console.log(err);
@@ -84,10 +87,12 @@ class ArticleAdd extends React.Component {
     }
     axios
       .get('http://localhost:9090/bs/article/column.json?pageSize=all')
-      .then(({data}) => {
-        this.setState({
-          columns: data.data.columns,
-        });
+      .then(({ data }) => {
+        if (data.flag === 1) {
+          this.setState({
+            columns: data.data,
+          });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -96,10 +101,11 @@ class ArticleAdd extends React.Component {
   // 保存
   handleSubmit(e) {
     e.preventDefault();
-    this.props.form.validateFields((err, values) => {
+    const { form } = this.props;
+    form.validateFields((err, values) => {
       if (!err) {
         if (values.reprint && !values.source) {
-          this.props.form.setFields({
+          form.setFields({
             source: {
               value: values.source,
               errors: [new Error('内容来源不能为空')],
@@ -113,16 +119,18 @@ class ArticleAdd extends React.Component {
             method: this.id? 'put' : 'post',
             data,
           })
-          .then(({data}) => {
-            if (data && data.flag === 1) {
-              if (!this.id) {
+          .then(({ data }) => {
+            if (data.flag === 1) {
+              if (data.data && data.data.id) {
                 this.id = data.data.id;
               }
               message.success('保存成功');
+            } else {
+              message.error(data.msg);
             }
           })
           .catch(() => {
-            message.success('系统错误，请稍后再试');
+            message.error('系统错误，请稍后再试');
           });
         }
       }
@@ -131,8 +139,9 @@ class ArticleAdd extends React.Component {
   // 重置
   handleReset() {
     const { article } = this.state;
+    const { form } = this.props;
     this.editor.txt.html(article.content);
-    this.props.form.resetFields();
+    form.resetFields();
     this.setState({
       reprint: article.reprint,
     })
@@ -144,10 +153,11 @@ class ArticleAdd extends React.Component {
   }
   // 提交时内容校验
   validateEditorFrom(rule, value, callback) {
+    let txt;
     if (!this.editor.txt.text()) {
-      callback('内容不能为空');
+      txt = '内容不能为空';
     }
-    callback();
+    callback(txt);
   }
   render() {
     const { getFieldDecorator } = this.props.form;

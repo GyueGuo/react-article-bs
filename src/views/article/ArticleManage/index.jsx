@@ -29,9 +29,6 @@ const status = [{
 }, {
   title: '已通过',
   value: 2
-}, {
-  title: '已下架',
-  value: 3
 }];
 
 class Manage extends React.Component {
@@ -43,7 +40,6 @@ class Manage extends React.Component {
         title: '全部',
         id: 'all'
       }],
-      selectedRowKeys: [],
       loading: false,
     }
     this.searchQuery = {};
@@ -54,44 +50,38 @@ class Manage extends React.Component {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      align: "center"
+      align: 'center'
     }, {
       title: '栏目',
-      dataIndex: 'column',
-      key: 'column',
-      align: "center"
+      dataIndex: 'columnName',
+      key: 'columnName',
+      align: 'center'
     }, {
       title: '来源',
       dataIndex: 'source',
       key: 'source',
-      align: "center"
+      align: 'center'
     } ,{
       title: '发布时间',
       dataIndex: 'created',
       key: 'created',
-      align: "center"
+      align: 'center'
     }, {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      align: "center"
+      dataIndex: 'statusText',
+      key: 'statusText',
+      align: 'center'
     }, {
       title: '操作',
       key: 'operation',
-      align: "center",
-      render: (item) => (
-        <React.Fragment>
-          <a href="javascript:;" onClick={() => {this.handleDelete(item.id)}}>删除</a>
-          {' '}|{' '}  
-          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
-        </React.Fragment>
-      )
+      align: 'center',
+      render: (item) => this.showMenus(item),
     }];
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
     this.fetchList = this.fetchList.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleDelete = this.handleDelete.bind(this);
-    this.handleSelectedRowKeysChange = this.handleSelectedRowKeysChange.bind(this);
+    this.handlePass = this.handlePass.bind(this);
+    this.handleDown = this.handleDown.bind(this);
   }
   // 搜索表单提交
   handleSubmit(e) {
@@ -117,24 +107,56 @@ class Manage extends React.Component {
       },
     });
   }
-  // 删除
-  handleDelete(id) {
+  // 上架
+  handlePass(item) {
     Modal.confirm({
       cancelText: '取消',
       okText: '确定',
-      content: '操作不可恢复',
-      title: '确定删除么？',
+      title: '确认操作',
+      content: `确定上架 ${item.title} ？`,
       onOk: () => {
         axios({
-            url: 'http://localhost:9090/bs/article/article.json',
-            method: 'delete',
-            data: { id }
+            url: 'http://localhost:9090/bs/article/pass.json',
+            method: 'post',
+            data: {
+              id: item.id
+            }
           }).then(({data}) => {
-            console.log(data);
-            message.success('删除成功');
-            this.fetchList();
+            if (data.flag === 1) {
+              message.success('上架成功');
+              this.fetchList();
+            } else {
+              message.error(data.msg);
+            }
           }, () => {
-            message.error('系统错误，请稍后再试');
+            message.error('请检查网络后重试');
+          });
+      }
+    });
+  }
+  // 下架
+  handleDown(item) {
+    Modal.confirm({
+      cancelText: '取消',
+      okText: '确定',
+      title: '确认操作',
+      content: `确定下架 ${item.title} ？`,
+      onOk: () => {
+        axios({
+            url: 'http://localhost:9090/bs/article/pass.json',
+            method: 'delete',
+            data: {
+              id: item.id
+            }
+          }).then(({data}) => {
+            if (data.flag === 1) {
+              message.success('下架成功');
+              this.fetchList();
+            } else {
+              message.error(data.msg);
+            }
+          }, () => {
+            message.error('请检查网络后重试');
           });
       }
     });
@@ -151,12 +173,19 @@ class Manage extends React.Component {
     axios
       .get(url)
       .then(({data}) => {
-        const { articles } = data.data;
-        this.hasNext = articles.length >= this.pageSize;
-        this.setState({
-          articles,
-          loading: false,
-        });
+        if (data.flag === 1) {
+          const articles = data.data;
+          this.hasNext = articles.length >= this.pageSize;
+          this.setState({
+            articles,
+            loading: false,
+          });
+        } else {
+          message.error(data.msg);
+          this.setState({
+            loading: false,
+          });
+        }
       })
       .catch((err) => {
         this.setState({
@@ -169,17 +198,40 @@ class Manage extends React.Component {
     this.current = current;
     this.fetchList();
   }
-  handleSelectedRowKeysChange(selectedRowKeys) {
-    this.setState({ selectedRowKeys });
+  
+  showMenus(item) {
+    if ([0, 1].includes(item.status)) {
+      return (
+        <React.Fragment>
+          <a href="javascript:;" onClick={() => {this.handlePass(item)}}>上架</a>
+          {' '}|{' '}  
+          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
+        </React.Fragment>
+      )
+    } else if (item.status === 2) {
+      return (
+        <React.Fragment>
+          <a href="javascript:;" onClick={() => {this.handleDown(item)}}>下架</a>
+          {' '}|{' '}  
+          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
+        </React.Fragment>
+      )
+    } else {
+      return null;
+    }
   }
   componentDidMount() {
     const { columns } = this.state;
     axios
       .get('http://localhost:9090/bs/article/column.json?pageSize=all')
       .then(({data}) => {
-        this.setState({
-          columns: [...columns, ...data.data.columns],
-        });
+        if (data.flag === 1) {
+          this.setState({
+            columns:  [...columns, ...data.data],
+          });
+        } else {
+          message.error(data.msg);
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -188,11 +240,7 @@ class Manage extends React.Component {
   }
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { selectedRowKeys, articles, columns, loading } = this.state;
-    const rowSelection = {
-      selectedRowKeys,
-      onChange: this.handleSelectedRowKeysChange,
-    };
+    const { articles, columns, loading } = this.state;
     return (
       <div className="article-manage">
         <Form className="search-form" layout="inline" onSubmit={this.handleSubmit}>
@@ -201,7 +249,7 @@ class Manage extends React.Component {
               <Form.Item label="栏目" {...formItemLayout}>
                 {
                   getFieldDecorator('column', {
-                  initialValue: columns.length ? columns[0].id : ''
+                  initialValue: columns[0].id,
                   })(
                     <Select>
                       {
@@ -255,7 +303,6 @@ class Manage extends React.Component {
         </Form>
         <Table
           pagination={false}
-          rowSelection={rowSelection}
           columns={this.columnConf}
           dataSource={articles}
           rowKey={item => item.id}

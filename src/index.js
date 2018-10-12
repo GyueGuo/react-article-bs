@@ -6,8 +6,8 @@ import Welcome from './views/Welcome.jsx';
 import ArticleManage from './views/article/ArticleManage/index.jsx';
 import ArticleAdd from './views/article/ArticleAdd/index.jsx';
 import ColumnManage from './views/article/ColumnManage/index.jsx';
-import UserList from './views/user/UserList/index.jsx';
-import UserAdd from './views/user/UserAdd/index.jsx';
+import UserList from './views/user/UserClosure/index.jsx';
+import UserAdd from './views/user/UserExamination/index.jsx';
 import registerServiceWorker from './registerServiceWorker';
 
 ReactDOM.render(

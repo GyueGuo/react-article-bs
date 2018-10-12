@@ -46,6 +46,11 @@ class ArticleAdd extends React.Component {
       key: 'title',
       align: "center"
     }, {
+      title: '文章总数',
+      dataIndex: 'count',
+      key: 'count',
+      align: "center"
+    }, {
       title: '创建时间',
       dataIndex: 'created',
       key: 'created',
