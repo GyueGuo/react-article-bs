@@ -251,7 +251,7 @@ class Manage extends React.Component {
                   getFieldDecorator('column', {
                   initialValue: columns[0].id,
                   })(
-                    <Select>
+                    <Select style={{minWidth: '160px'}}>
                       {
                         columns.map((item) => (
                           <Select.Option key={item.id} value={item.id}>

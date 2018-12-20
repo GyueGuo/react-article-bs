@@ -1,18 +1,14 @@
 import React from 'react';
-import { Form, Input, Upload, Button, Radio, Icon, message } from 'antd';
+import axios from 'axios';
+import md5 from 'md5';
+import { Form, Input, Button, message, Row, Col, Radio } from 'antd';
 import './index.less';
 
-const ItemLayout =  {
-  labelCol: { span: 3 },
-  wrapperCol: { span: 14 , offset: 1},
-};
-const MaxSize = 2 * 1024 * 2024;
 class UserAdd extends React.Component {
   constructor(props) {
     super(props);
     this.state = {};
-    this.handleUploadChange = this.handleUploadChange.bind(this);
-    this.handleBeforeUpload = this.handleBeforeUpload.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   handleSubmit(e) {
@@ -20,86 +16,91 @@ class UserAdd extends React.Component {
     const { form } = this.props;
     form.validateFields((err, values) => {
       if (!err) {
-        console.log('Received values of form: ', values);
+        message.loading('注册中...');
+        const data = { ...values };
+        data.password = md5(data.password);
+        axios({
+          method: 'post',
+          url: 'http://localhost:9090/bs/user/register.json',
+          data,
+        }).then(({data}) => {
+          message.destroy();
+          if (data.flag === 1) {
+            message.success('注册成功');
+            form.resetFields();
+          } else {
+            message.error(data.msg || '请检查网络');
+          }
+        })
       }
     });
   }
 
-  handleUploadChange({fileList}) {
-    console.log(fileList);
-  }
-
-  handleBeforeUpload(file) {
-    if (file.size > MaxSize) {
-      message.error('上传图片不能大于2M');
-    } else {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = function(e) {
-        const base64 = e.target.result;
-        console.log(base64);
-      }
-    }
-    return false;
-  }
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { fileList } = this.state;
     return (
       <div className="user-add">
-        <Form onSubmit={this.handleSubmit} mode="horizontal">
-          <Form.Item label="用户名" {...ItemLayout}>
-            {
-              getFieldDecorator('username', {
-                rules: [{
-                  required: true,
-                }],
-                initialValue: ''
-              })(
-                <Input autoComplete="off" />
-              )
-            }
-          </Form.Item>
-          <Form.Item label="昵称" {...ItemLayout}>
-            {
-              getFieldDecorator('username', {
-                rules: [{
-                  required: true,
-                }],
-                initialValue: ''
-              })(
-                <Input autoComplete="off" />
-              )
-            }
-          </Form.Item>
-          <Form.Item label="头像" {...ItemLayout}>
-            {
-              getFieldDecorator('portrait', {
-                rules: [{
-                  required: true,
-                }],
-                initialValue: ''
-              })(
-                <Input type="hidden" />
-              )
-            }
-            <Upload
-              accept="image/png, image/jpeg, image/jpg"
-              beforeUpload={this.handleBeforeUpload}
-              onChange={this.handleUploadChange}
-              fileList={fileList}
-            >
-              <Button className="portrait-button">
+        <Form onSubmit={this.handleSubmit}>
+          <Row className="user-add-row">
+            <Col span={4}>用户名</Col>
+            <Col span={10} offset={1}>
+              {
+                getFieldDecorator('username', {
+                  rules: [{
+                    required: true,
+                    message: '用户名不能为空',
+                  }],
+                  initialValue: ''
+                })(
+                  <Input autoComplete="off" placeholder="请输入用户名" />
+                )
+              }
+            </Col>
+            <Col span={8} offset={1}>
                 {
-
+                  getFieldDecorator('sex', {
+                    initialValue: 1
+                  })(
+                    <Radio.Group buttonStyle="solid">
+                      <Radio.Button value={1}>男</Radio.Button>
+                      <Radio.Button value={2}>女</Radio.Button>
+                    </Radio.Group>
+                  )
                 }
-                <div className="portrait-inner">
-                  <Icon type="upload" />
-                  上传头像
-                </div>
-              </Button>
-            </Upload>
-          </Form.Item>
+            </Col>
+          </Row>
+          <Row className="user-add-row">
+            <Col span={4}>昵称</Col>
+            <Col span={10} offset={1}>
+              {
+                getFieldDecorator('nickname', {
+                  rules: [{
+                    required: true,
+                    message: '昵称不能为空',
+                  }],
+                  initialValue: ''
+                })(
+                  <Input autoComplete="off" placeholder="请输入昵称" />
+                )
+              }
+            </Col>
+          </Row>
+          <Row className="user-add-row">
+            <Col span={4}>密码</Col>
+            <Col span={10} offset={1}>
+              {
+                getFieldDecorator('password', {
+                  rules: [{
+                    required: true,
+                    message: '密码不能为空',
+                  }],
+                  initialValue: ''
+                })(
+                  <Input type="password" autoComplete="off" placeholder="请输入密码" />
+                )
+              }
+            </Col>
+          </Row>
           <Button htmlType="submit" type="primary">提交</Button>
         </Form>
       </div>

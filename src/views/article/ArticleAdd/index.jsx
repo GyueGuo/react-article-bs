@@ -116,7 +116,7 @@ class ArticleAdd extends React.Component {
           data.source = data.reprint ? data.source : '';
           axios({
             url: 'http://localhost:9090/bs/article/article.json',
-            method: this.id? 'put' : 'post',
+            method: this.id ? 'put' : 'post',
             data,
           })
           .then(({ data }) => {

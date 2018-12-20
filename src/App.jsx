@@ -8,11 +8,11 @@ const MENU = [{
   title: '用户管理',
   key: '/user/',
   children: [{
+    title: '新建账号',
+    link: '/user/user-add',
+  }, {
     title: '用户封禁',
     link: '/user/user-closure',
-  }, {
-    title: '用户审核',
-    link: '/user/user-examination',
   }]
 }, {
   title: '文章管理',
