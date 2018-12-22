@@ -59,7 +59,7 @@ class ArticleAdd extends React.Component {
       title: '操作',
       key: 'operation',
       align: "center",
-      render: (item) => ( <a href="javascript:;" onClick={() => this.handleEditColumn(item)}>编辑</a>)
+      render: (item) => ( <a onClick={() => this.handleEditColumn(item)}>编辑</a>)
     }];
   }
   // 分页组件页数变更回调

@@ -2,7 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import Pagination from '../../../components/pagination';
 import ShowUserInfo from './ShowUserInfo.jsx';
-import { Table, Input, Col, Row, Form, Button, message, Select } from 'antd';
+import { Table, Input, Form, Button, message, Select } from 'antd';
 import './index.less';
 
 class UserClosure extends React.Component {
@@ -50,7 +50,7 @@ class UserClosure extends React.Component {
       align: "center",
       render: (item) => (
         <React.Fragment>
-          <a href="javascript:;" onClick={() => {this.handleRecover(item.id)}}>解封</a>
+          <a onClick={() => {this.handleRecover(item.id)}}>解封</a>
         </React.Fragment>
       ),
     }];

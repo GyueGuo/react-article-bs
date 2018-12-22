@@ -88,7 +88,7 @@ class Manage extends React.Component {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
       const query = {};
-      Object.keys(values).map((key) => {
+      Object.keys(values).forEach((key) => {
         if (values[key] !== '' && values[key] !== 'all') {
           query[key] = values[key];
         }
@@ -203,17 +203,17 @@ class Manage extends React.Component {
     if ([0, 1].includes(item.status)) {
       return (
         <React.Fragment>
-          <a href="javascript:;" onClick={() => {this.handlePass(item)}}>上架</a>
+          <a onClick={() => {this.handlePass(item)}}>上架</a>
           {' '}|{' '}  
-          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
+          <a onClick={() => {this.handleEdit(item.id)}}>编辑</a>
         </React.Fragment>
       )
     } else if (item.status === 2) {
       return (
         <React.Fragment>
-          <a href="javascript:;" onClick={() => {this.handleDown(item)}}>下架</a>
+          <a onClick={() => {this.handleDown(item)}}>下架</a>
           {' '}|{' '}  
-          <a href="javascript:;" onClick={() => {this.handleEdit(item.id)}}>编辑</a>
+          <a onClick={() => {this.handleEdit(item.id)}}>编辑</a>
         </React.Fragment>
       )
     } else {
