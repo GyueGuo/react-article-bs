@@ -52,8 +52,8 @@ class ArticleAdd extends React.Component {
       align: "center"
     }, {
       title: '创建时间',
-      dataIndex: 'created',
-      key: 'created',
+      dataIndex: 'createdText',
+      key: 'createdText',
       align: "center"
     }, {
       title: '操作',

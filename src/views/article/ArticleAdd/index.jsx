@@ -1,6 +1,7 @@
 import React from 'react';
 import Editor from 'wangeditor';
 import axios from 'axios';
+
 import './index.less';
 
 import { Form, Input, Select, Row, Button, Checkbox, message } from 'antd';
@@ -114,6 +115,7 @@ class ArticleAdd extends React.Component {
         } else {
           const data = { ...values, id: this.id };
           data.source = data.reprint ? data.source : '';
+          console.log(data);
           axios({
             url: 'http://localhost:9090/bs/article/article.json',
             method: this.id ? 'put' : 'post',
@@ -205,7 +207,7 @@ class ArticleAdd extends React.Component {
                 onChange={this.handleReprintChange}
                 checked={reprint}
               >
-                是否转载
+                转载
               </Checkbox>,
               )
             }

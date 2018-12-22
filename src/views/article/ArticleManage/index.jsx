@@ -63,8 +63,8 @@ class Manage extends React.Component {
       align: 'center'
     } ,{
       title: '发布时间',
-      dataIndex: 'created',
-      key: 'created',
+      dataIndex: 'createdText',
+      key: 'createdText',
       align: 'center'
     }, {
       title: '状态',
