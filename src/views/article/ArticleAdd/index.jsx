@@ -34,70 +34,27 @@ const editorConfig = [
   'undo', // 撤销
   'redo', // 恢复
 ];
+const defaultArticle = {
+  title: '',
+  id: '',
+  column: '',
+  reprint: false,
+  source: '',
+  content: '',
+};
 class ArticleAdd extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       columns: [],
       reprint: false,
-      article: {
-        title: '',
-        id: '',
-        column: '',
-        reprint: false,
-        source: '',
-        content: ''
-      },
+      article: { ...defaultArticle },
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleReprintChange = this.handleReprintChange.bind(this);
     this.validateEditorFrom = this.validateEditorFrom.bind(this);
     
-  }
-  componentDidMount() {
-    const { form, location } = this.props;
-    // 初始化富文本编辑器
-    this.editor = new Editor(this.editorNode);
-    this.editor.customConfig.menus = editorConfig;
-    this.editor.customConfig.zIndex = 100;
-    this.editor.customConfig.onchange = (html) => {
-      // 输入时将编辑器的html值设为form表单的content属性值
-      form.setFieldsValue({
-        content: html.trim(),
-      });
-    };
-    this.editor.create();
-    if (location.state && location.state.id) {
-      this.id = location.state.id;
-      axios
-        .get(`http://localhost:9090/bs/article/article.json?id=${this.id}`)
-        .then(({ data }) => {
-          if (data.flag === 1) {
-            const article = data.data;
-            this.editor.txt.html(article.content);
-            this.setState({
-              article,
-              reprint: !!article.reprint,
-            });
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }
-    axios
-      .get('http://localhost:9090/bs/article/column.json?pageSize=all')
-      .then(({ data }) => {
-        if (data.flag === 1) {
-          this.setState({
-            columns: data.data,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
   }
   // 保存
   handleSubmit(e) {
@@ -115,7 +72,6 @@ class ArticleAdd extends React.Component {
         } else {
           const data = { ...values, id: this.id };
           data.source = data.reprint ? data.source : '';
-          console.log(data);
           axios({
             url: 'http://localhost:9090/bs/article/article.json',
             method: this.id ? 'put' : 'post',
@@ -160,6 +116,61 @@ class ArticleAdd extends React.Component {
       txt = '内容不能为空';
     }
     callback(txt);
+  }
+  updateArticleInfo(props) {
+    const { form, location } = props;
+    if (!this.editor) {
+      // 初始化富文本编辑器
+      this.editor = new Editor(this.editorNode);
+      this.editor.customConfig.menus = editorConfig;
+      this.editor.customConfig.zIndex = 100;
+      this.editor.customConfig.onchange = (html) => {
+        // 输入时将编辑器的html值设为form表单的content属性值
+        form.setFieldsValue({
+          content: html.trim(),
+        });
+      };
+      this.editor.create();
+    }
+    if (location.state && location.state.id) {
+      this.id = location.state.id;
+      axios
+        .get(`http://localhost:9090/bs/article/article.json?id=${this.id}`)
+        .then(({ data }) => {
+          if (data.flag === 1) {
+            const article = data.data;
+            this.editor.txt.html(article.content);
+            this.setState({
+              article,
+              reprint: !!article.reprint,
+            });
+          }
+        });
+    }
+    axios
+      .get('http://localhost:9090/bs/article/column.json?pageSize=all')
+      .then(({ data }) => {
+        if (data.flag === 1) {
+          this.setState({
+            columns: data.data,
+          });
+        }
+      });
+  }
+  componentDidMount() {
+    this.updateArticleInfo(this.props);
+  }
+  componentWillReceiveProps(nextProps) {
+    if (JSON.stringify(this.props.location.state) !== JSON.stringify(nextProps.location.state)) {
+      this.setState({
+        article: { ...defaultArticle },
+        reprint: false,
+      }, () => {
+        this.props.form.resetFields();
+      });
+      this.editor && this.editor.txt.html('');
+      this.updateArticleInfo(nextProps);
+    }
   }
   render() {
     const { getFieldDecorator } = this.props.form;
