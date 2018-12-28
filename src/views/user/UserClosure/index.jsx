@@ -14,10 +14,11 @@ class UserClosure extends React.Component {
       tableLoading: true,
     };
     this.handlePaginationChange = this.handlePaginationChange.bind(this);
-    this.handleValid = this.handleValid.bind(this);
+    this.formValidtor = this.formValidtor.bind(this);
     this.handleSearch = this.handleSearch.bind(this);
     this.handleHideModal = this.handleHideModal.bind(this);
     this.handleClosure = this.handleClosure.bind(this);
+    this.handleRecover = this.handleRecover.bind(this);
 
     this.columnConf = [{
       title: '用户名',
@@ -40,17 +41,12 @@ class UserClosure extends React.Component {
       key: 'closureTimeText',
       align: "center",
     }, {
-      title: '封禁原因',
-      dataIndex: 'closureText',
-      key: 'closureText',
-      align: "center",
-    }, {
       title: '操作',
       key: 'operation',
       align: "center",
       render: (item) => (
         <React.Fragment>
-          <a onClick={() => {this.handleRecover(item.id)}}>解封</a>
+          <a onClick={() => {this.handleRecover(item.userid)}}>解封</a>
         </React.Fragment>
       ),
     }];
@@ -65,7 +61,7 @@ class UserClosure extends React.Component {
     this.fetchList();
   }
 
-  handleValid(rule, value, callback) {
+  formValidtor(rule, value, callback) {
     let msg;
     if (!value) {
       const { form } = this.props;
@@ -89,6 +85,27 @@ class UserClosure extends React.Component {
     this.selected = null;
     this.setState({
       showModal: false,
+    });
+  }
+
+  handleRecover(id) {
+    message.loading('操作中...');
+    axios({
+      method: 'delete',
+      url: 'http://localhost:9090/bs/user/closure.json',
+      data: {
+        id,
+      },
+    }).then(({ data }) => {
+      message.destroy();
+      if (data.flag === 1) {
+        this.fetchList();
+      } else {
+        message.error(data.msg);
+      }
+    }, () => {
+      message.destroy();
+      message.error('请检查网络');
     });
   }
 
@@ -188,7 +205,7 @@ class UserClosure extends React.Component {
               getFieldDecorator('id', {
                 rules: [{
                   required: true,
-                  validator: this.handleValid,
+                  validator: this.formValidtor,
                 }],
                 initialValue: '',
               })(
